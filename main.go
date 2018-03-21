@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func setupRouter() *gin.Engine {
+func setupRouter(s *GameState) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
@@ -18,6 +18,19 @@ func setupRouter() *gin.Engine {
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
+	})
+
+	// Login
+	r.POST("/login", func(c *gin.Context) {
+		username := c.PostForm("username")
+		password := c.PostForm("password")
+
+		if s.CheckPassword(username, password) != nil {
+			c.JSON(403, struct{ Error string }{"Invalid username/password"})
+			return
+		}
+		// TODO return a jwt
+		c.JSON(200, nil)
 	})
 
 	// Websocket echo server
@@ -51,7 +64,11 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-	r := setupRouter()
+	game, err := InitialState()
+	if err != nil {
+		log.Fatalln("Got error when initializing state", err)
+	}
+	r := setupRouter(game)
 	// Listen and Server in 0.0.0.0:8080
 	r.Run(":8080")
 }
