@@ -4,13 +4,16 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-func setupRouter(s *GameState) *gin.Engine {
+func setupRouter(s *GameState, jwtSecret []byte) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
@@ -29,8 +32,19 @@ func setupRouter(s *GameState) *gin.Engine {
 			c.JSON(403, struct{ Error string }{"Invalid username/password"})
 			return
 		}
-		// TODO return a jwt
-		c.JSON(200, nil)
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"iss": "muhmud",
+			"exp": time.Now().Add(time.Hour * 24),
+			"nbf": time.Now(),
+		})
+
+		tokenString, err := token.SignedString([]byte(jwtSecret))
+		if err != nil {
+			log.Println("Got an error when signing token", err)
+			c.JSON(500, nil)
+			return
+		}
+		c.JSON(200, struct{ Token string }{tokenString})
 	})
 
 	// Websocket echo server
@@ -64,11 +78,19 @@ func setupRouter(s *GameState) *gin.Engine {
 }
 
 func main() {
+	// Startup the game
 	game, err := InitialState()
 	if err != nil {
 		log.Fatalln("Got error when initializing state", err)
 	}
-	r := setupRouter(game)
+	// Pull secrets
+	jwtSecret := os.Getenv("MUHMUD_SECRET")
+	if jwtSecret == "" {
+		log.Fatalln("Refusing to start without a jwt secret defined. Set MUHMUD_SECRET to something")
+		os.Exit(1)
+	}
+	// Setup our router/handlers
+	r := setupRouter(game, []byte(jwtSecret))
 	// Listen and Server in 0.0.0.0:8080
 	r.Run(":8080")
 }
