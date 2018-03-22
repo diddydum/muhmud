@@ -29,18 +29,19 @@ func setupRouter(s *GameState, jwtSecret []byte) *gin.Engine {
 
 	// Login
 	r.POST("/login", func(c *gin.Context) {
-		username := c.PostForm("username")
+		email := c.PostForm("email")
 		password := c.PostForm("password")
 
-		if s.CheckPassword(username, password) != nil {
-			c.JSON(403, struct{ Error string }{"Invalid username/password"})
+		if s.CheckPassword(email, password) != nil {
+			c.JSON(403, struct{ Error string }{"Invalid email/password"})
 			return
 		}
 		// TODO this is an abuse of jwts - implement a better system with refresh
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"iss": "muhmud",
-			"exp": time.Now().Add(time.Hour * 24),
-			"nbf": time.Now(),
+			"iss":   "muhmud",
+			"exp":   time.Now().Add(time.Hour * 24),
+			"nbf":   time.Now(),
+			"email": email,
 		})
 
 		tokenString, err := token.SignedString([]byte(jwtSecret))

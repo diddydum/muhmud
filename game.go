@@ -12,13 +12,13 @@ var hashCost = 4
 
 // GameState is a container for all state related to the game
 type GameState struct {
+	// Mapping from email to player
 	Players map[string]Player
 }
 
 // Player describes a user that plays on the system. The player is distinct from
 // a character in the game.
 type Player struct {
-	Username string
 	Email    string
 	PassHash []byte
 }
@@ -36,13 +36,13 @@ func (s *GameState) CheckPassword(username, password string) error {
 	return bcrypt.CompareHashAndPassword(user.PassHash, []byte(password))
 }
 
-func player(username, email, password string) (*Player, error) {
+func player(email, password string) (*Player, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), hashCost)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Player{Username: username, Email: email, PassHash: hash}, nil
+	return &Player{Email: email, PassHash: hash}, nil
 }
 
 // InitialState sets up a new initial state for the game
@@ -50,11 +50,11 @@ func InitialState() (*GameState, error) {
 	state := GameState{}
 	state.Players = make(map[string]Player)
 
-	me, err := player("diddydum", "diddydum@gmail.com", "foobar")
+	me, err := player("diddydum@gmail.com", "foobar")
 	if err != nil {
 		return nil, err
 	}
-	state.Players[me.Username] = *me
+	state.Players[me.Email] = *me
 
 	return &state, nil
 }
