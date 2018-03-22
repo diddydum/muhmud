@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -17,6 +18,9 @@ func setupRouter(s *GameState, jwtSecret []byte) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
+
+	// TODO eventually make cors more permissive
+	r.Use(cors.Default())
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
@@ -32,6 +36,7 @@ func setupRouter(s *GameState, jwtSecret []byte) *gin.Engine {
 			c.JSON(403, struct{ Error string }{"Invalid username/password"})
 			return
 		}
+		// TODO this is an abuse of jwts - implement a better system with refresh
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"iss": "muhmud",
 			"exp": time.Now().Add(time.Hour * 24),
