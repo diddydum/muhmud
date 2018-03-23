@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -66,6 +67,30 @@ func setupRouter(s *GameState, jwtSecret []byte) *gin.Engine {
 			log.Println(err)
 			return
 		}
+
+		// TODO eventually factor out jwt auth into middleware
+		tokenString := c.Query("token")
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+
+			return jwtSecret, nil
+		})
+		if err != nil {
+			conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4000, "Invalid token"))
+			conn.Close()
+			return
+		}
+
+		var email string
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			email = claims["email"].(string)
+		} else {
+			conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4000, "Invalid token"))
+			conn.Close()
+		}
+		log.Printf("Email %s has connected\n", email)
 
 		for {
 			messageType, p, err := conn.ReadMessage()
