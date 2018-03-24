@@ -91,21 +91,52 @@ func setupRouter(s *GameState, jwtSecret []byte) *gin.Engine {
 			conn.Close()
 		}
 		log.Printf("Email %s has connected\n", email)
-
-		for {
-			messageType, p, err := conn.ReadMessage()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			if err := conn.WriteMessage(messageType, p); err != nil {
-				log.Println(err)
-				return
-			}
+		connID, mbox, err := s.ConnectPlayer(email)
+		if err != nil {
+			log.Println(err)
+			conn.Close()
+			return
 		}
+		controlLoop(s, email, conn, connID, mbox)
 	})
 
 	return r
+}
+
+func controlLoop(s *GameState, email string, conn *websocket.Conn, connID ConnectionID, mbox <-chan string) {
+	// Write forever until mbox says to close
+	go func() {
+		for {
+			msg, ok := <-mbox
+			if !ok {
+				// Go ahead and close
+				conn.Close()
+				break
+			}
+			err := conn.WriteMessage(websocket.TextMessage, []byte(msg))
+			if err != nil {
+				log.Printf("Got an error while writing: %s", err.Error())
+			}
+		}
+	}()
+
+	// Read forever until error
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			// Disconnect the user and return
+			s.DisconnectPlayer(connID)
+			break
+		}
+		if messageType != websocket.TextMessage {
+			// ignore?
+			log.Println("Got a non text message on socket, ignoring")
+			continue
+		}
+
+		// broadcast p to everyone
+		s.NotifyEveryone(fmt.Sprintf("%s: %s", email, string(p)))
+	}
 }
 
 func main() {
