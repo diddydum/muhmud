@@ -90,6 +90,8 @@ func (s *GameState) ConnectPlayer(email string) (ConnectionID, <-chan string, er
 		s.NotifyEveryone(fmt.Sprintf("%s has connected.", email))
 	}
 	mbox := make(chan string, 100)
+	mbox <- WelcomeMsg()
+
 	connID := s.NextConnectionID
 	s.NextConnectionID = s.NextConnectionID + 1
 
@@ -136,4 +138,9 @@ func (s *GameState) NotifyEveryone(msg string) {
 	for _, mbox := range s.Connections {
 		mbox <- msg
 	}
+}
+
+// WelcomeMsg is a welcome message
+func WelcomeMsg() string {
+	return "Welcome to muhmud; the mud with %rfantastic%c colors."
 }
