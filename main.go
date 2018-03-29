@@ -2,26 +2,38 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"gopkg.in/yaml.v2"
 )
 
-func setupRouter(s *GameState, jwtSecret []byte) *gin.Engine {
+// Configuration represents high-level configuration for how the mud operates.
+type Configuration struct {
+	// JWTSecret is the string used to sign JWT tokens.
+	JWTSecret string `yaml:"jwt_secret"`
+	// AllowedOrigins represents valid Origins to accept requests from
+	AllowedOrigins []string `yaml:"allowed_origins"`
+}
+
+func setupRouter(s *GameState, jwtSecret []byte, origins []string) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
-	// TODO eventually make cors more permissive
-	r.Use(cors.Default())
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     origins,
+		AllowMethods:     []string{"GET", "POST"},
+		AllowHeaders:     []string{"Origin", "Bearer"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
@@ -59,7 +71,7 @@ func setupRouter(s *GameState, jwtSecret []byte) *gin.Engine {
 		upgrader := websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
-			CheckOrigin:     checkOrigin,
+			CheckOrigin:     checkOrigin(origins),
 		}
 
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
@@ -140,38 +152,40 @@ func controlLoop(s *GameState, email string, conn *websocket.Conn, connID Connec
 }
 
 func main() {
+	// load configuration
+	bs, err := ioutil.ReadFile("muhmud.conf.yaml")
+	if err != nil {
+		log.Fatalln("Got errror when attempting to open config file muhmud.conf.yaml:", err)
+	}
+	var config Configuration
+	err = yaml.UnmarshalStrict(bs, &config)
+	if err != nil {
+		log.Fatalln("Got error when attempting to read config:", err)
+	}
+
 	// Startup the game
 	game, err := InitialState()
 	if err != nil {
 		log.Fatalln("Got error when initializing state", err)
 	}
-	// Pull secrets
-	jwtSecret := os.Getenv("MUHMUD_SECRET")
-	if jwtSecret == "" {
-		log.Fatalln("Refusing to start without a jwt secret defined. Set MUHMUD_SECRET to something")
-		os.Exit(1)
-	}
 	// Setup our router/handlers
-	r := setupRouter(game, []byte(jwtSecret))
+	r := setupRouter(game, []byte(config.JWTSecret), config.AllowedOrigins)
 	// Listen and Server in 0.0.0.0:8080
 	r.Run(":8080")
 }
 
-func checkOrigin(r *http.Request) bool {
-	origin := r.Header["Origin"]
-	if len(origin) == 0 {
-		return true
-	}
-	u, err := url.Parse(origin[0])
-	if err != nil {
+func checkOrigin(allowedOrigins []string) func(r *http.Request) bool {
+	return func(r *http.Request) bool {
+		origin := r.Header["Origin"]
+
+		if len(origin) == 0 {
+			return true
+		}
+		for _, o := range allowedOrigins {
+			if o == origin[0] {
+				return true
+			}
+		}
 		return false
 	}
-	// be permissive if running locally
-	reqHost := strings.Split(r.Host, ":")[0]
-	if reqHost == "localhost" && strings.Split(u.Host, ":")[0] == "localhost" {
-		return true
-	}
-
-	// TODO: need to perform case folding?
-	return u.Host == r.Host
 }

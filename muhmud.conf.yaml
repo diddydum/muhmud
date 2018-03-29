@@ -1,0 +1,5 @@
+# The JWT secret to use (use something else in prod!)
+jwt_secret: foobarbaz
+# A list of allowed origins
+allowed_origins: 
+  - "http://localhost:4200" 
