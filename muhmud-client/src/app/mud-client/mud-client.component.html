@@ -1,0 +1,33 @@
+<div class="mud-client">
+  <div class="nav">
+    <a routerLink="/logout">Logout</a>
+  </div>
+  <div id="messages"
+       (scroll)="messagesScrolled($event)">
+    <li *ngFor="let message of messages" class="message" [innerHTML]="message"></li>
+  </div>
+  <div class="command-window">
+    <form #commandForm="ngForm" (ngSubmit)="onCommandSubmit()">
+      <input type="text" 
+             id="command" 
+             required
+             [(ngModel)]="command"
+             name="command"
+             [disabled]="!isConnected()"
+             autocomplete="off">
+      <button type="submit" [disabled]="!isConnected() || isCommandEmpty()">Send</button>
+    </form>
+    <div class="status">
+      <span class="connection-status" [ngSwitch]="websocket?.readyState">
+        <span class="disconnected" *ngSwitchCase="undefined">Disconnected.</span>
+        <span class="connecting" *ngSwitchCase="0">Connecting...</span>
+        <span class="connected" *ngSwitchCase="1">Connected.</span>
+        <span class="closing" *ngSwitchCase="2">Closing...</span>
+        <span class="disconnected" *ngSwitchCase="3">Disconnected.</span>
+      </span>
+      <span class="auth-expired" *ngIf="authExpired">
+        You are not logged in; please <a routerLink="/login">login</a>.
+      </span>
+    </div>
+  </div>
+</div>

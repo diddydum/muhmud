@@ -1,0 +1,85 @@
+@font-face {
+  font-family: 'px437_ibm_vga8regular';
+  src: url('../../assets/px437_ibm_vga8-webfont.woff2') format('woff2'),
+       url('../../assets/px437_ibm_vga8-webfont.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.mud-client {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 3em 1fr 4.5em;
+  font-family: 'px437_ibm_vga8regular', monospace;
+  font-size: 16px;
+  color: rgb(170, 170, 170);
+}
+
+.nav {
+  margin: 1em;
+}
+
+li.message {
+  list-style-type: none;
+}
+
+#messages {
+  margin-left: 1em;
+  margin-right: 1em;
+  overflow: scroll;
+}
+
+.command-window {
+  margin-top: 1em;
+  margin-left: 1em;
+  margin-bottom: 1em;
+}
+
+input#command {
+  width: 40em;
+}
+
+button {
+  font-family: 'px437_ibm_vga8regular', monospace;
+  font-size: 16px;
+}
+
+input[type='text'] {
+  font-family: 'px437_ibm_vga8regular', monospace;
+  font-size: 16px;
+  color: rgb(170, 170, 170);
+}
+
+.c-b {
+  color: rgb(0, 0, 0);
+}
+
+.c-r {
+  color: rgb(170, 0, 0);
+}
+
+.c-g {
+  color: rgb(0, 170, 0);
+}
+
+.c-y {
+  color: rgb(170, 85, 0);
+}
+
+.c-u {
+  color: rgb(0, 0, 170);
+}
+
+.c-m {
+  color: rgb(170, 0, 170);
+}
+
+.c-c {
+  color: rgb(0, 170, 170);
+}
+
+.c-w {
+  color: rgb(170, 170, 170);
+}

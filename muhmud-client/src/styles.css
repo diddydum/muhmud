@@ -1,0 +1,27 @@
+/* You can add global styles to this file, and also import other style files */
+body {
+  background: #111;
+  color: #ddd;
+  padding: 0;
+  margin: 0;
+}
+
+button {
+  background: #666;
+  color: #ddd;
+  border: 1px solid black; 
+}
+
+button[disabled] {
+  color: #888;
+}
+
+input[type='text'] {
+  background: #111;
+  color: #ddd;
+}
+
+input[type='password'] {
+  background: #111;
+  color: #ddd;
+}
