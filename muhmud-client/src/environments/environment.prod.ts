@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  server: 'https://api.muhmud.org'
+  server: 'https://some-vald-api-name.example.com'
 };
