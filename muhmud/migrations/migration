@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [[ -z "$1" ]]; then
+    echo "usage: $0 <name>"
+    exit 1
+fi
+d=$(date +%s)
+prefix="${d}_$1"
+echo "Creating ${prefix}.up.sql"
+touch ${prefix}.up.sql
+echo "Creating ${prefix}.down.sql"
+touch ${prefix}.down.sql
